@@ -36,7 +36,7 @@ void splashScreen() {
   SeeedOled.setTextXY(0,0);        
   SeeedOled.putString("*** TUINO1 ***"); 
   SeeedOled.setTextXY(2,0);  
-  SeeedOled.putString("LoRa Thermostat"); 
+  SeeedOled.putString("NB-IoT Thermostat"); 
   
   SeeedOled.setTextXY(4,0);  
   sprintf(string,"PRESS");
@@ -80,35 +80,34 @@ void splashScreen() {
  }
 
 
- void displayLoraWanParams(String DevEUI, String AppEUI, String AppKey ) 
+ void displayNB_IoT_Params(String IMEI, String IMSI, String devAddress ) 
  {
   char string[64];
 
   SeeedOled.clearDisplay();
   SeeedOled.setTextXY(0,0);        
-  SeeedOled.putString(" LoRaWAN PARAMS"); 
+  SeeedOled.putString("NB-IoT Parameters"); 
   SeeedOled.setTextXY(1,0);        
-  SeeedOled.putString("DevEUI");
-  DevEUI.replace(":","");
-  DevEUI.toCharArray(string, 64);
+  SeeedOled.putString("IMEI");
+  //DevEUI.replace(":","");
+  //DevEUI.toCharArray(string, 64);
   SeeedOled.setTextXY(2,0);        
   SeeedOled.putString(string);
 
   SeeedOled.setTextXY(3,0);        
-  SeeedOled.putString("AppEUI"); 
-  AppEUI.replace(":","");
-  AppEUI.toCharArray(string, 64);
+  SeeedOled.putString("IMSI"); 
+  //AppEUI.replace(":","");
+  //AppEUI.toCharArray(string, 64);
   SeeedOled.setTextXY(4,0);        
   SeeedOled.putString(string);
   
   SeeedOled.setTextXY(5,0);        
-  SeeedOled.putString("AppKey"); 
-  AppKey.replace(":","");
-  AppKey.toCharArray(string, 64);
+  SeeedOled.putString("devAddress"); 
+  //AppKey.replace(":","");
+  //AppKey.toCharArray(string, 64);
   SeeedOled.setTextXY(6,0);        
   SeeedOled.putString(string);
      
-
  }
 
  void displayTime2TX(long int time_ms) {

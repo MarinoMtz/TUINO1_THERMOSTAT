@@ -1,9 +1,9 @@
-/* _____  _____  __  __             _____  _____
-  / ____||_   _||  \/  |    /\     / ____||_   _|
+/*  _____  _____  __  __             _____  _____
+   / ____||_   _||  \/  |    /\     / ____||_   _|
   | |  __   | |  | \  / |   /  \   | (___    | |
   | | |_ |  | |  | |\/| |  / /\ \   \___ \   | |
   | |__| | _| |_ | |  | | / ____ \  ____) | _| |_
-  \_____||_____||_|  |_|/_/    \_\|_____/ |_____|
+   \_____||_____||_|  |_|/_/    \_\|_____/ |_____|
   (c) 2017 GIMASI SA
 
    tuino1_thermostat.ino
@@ -18,7 +18,7 @@
         Hysteresis and bug fixes by Remi Gunsett remi.gunsett@actility.com
 */
 
-#include "gmx_lr.h"
+#include "gmx_bg96.h"
 #include "Regexp.h"
 #include "SeeedOLED.h"
 #include "display_utils.h"
@@ -66,14 +66,17 @@ float temp_temperature = 0;
 int temperature_counts = 0;
 
 
-// LoRa RX interrupt
+
+// NB-IoT RX interrupt
 
 bool data_received = false;
 
-void loraRx() {
+void NB_IoTRx() {
   data_received = true;
 }
 
+
+// Read temperature:
 
 float readTemp() {
   int a = analogRead(tempSensorPin );
@@ -93,8 +96,8 @@ void writeNFC() {
   String tmpString;
   String nfc_data;
 
-  gmxLR_getDevEui(tmpString);
-  nfc_data = "DevEUI:" + tmpString;
+  gmxBG96_getIMEI(tmpString);
+  nfc_data = "IMEI:" + tmpString;
   nfc_data = nfc_data + "\n\r";
 
   nfc_data = nfc_data + "Temp:" + String(readTemp());
@@ -141,7 +144,9 @@ void waitButton() {
 
 
 void setup() {
+  
   // put your setup code here, to run once:
+/*  
   String DevEui;
   String AppEui;
   String AppKey;
@@ -151,10 +156,15 @@ void setup() {
   String _AppKey;
   String loraClass,LoRaWANClass;
   String version;
+*/
 
-  char string[64];
+  String IMEI;
+  String IMSI;
+  String devAddress;
+  bool network_attached;
 
-  String adr, dcs, dxrate;
+  //char string[64];
+  //String adr, dcs, dxrate;
 
   byte join_status;
   int join_wait;
@@ -168,11 +178,10 @@ void setup() {
 
   // Init Oled
   SeeedOled.init();  //initialze SEEED OLED display
-
   SeeedOled.clearDisplay();          //clear the screen and set start position to top left corner
   SeeedOled.setNormalDisplay();      //Set display to normal mode (i.e non-inverse mode)
-  SeeedOled.setHorizontalMode();           //Set addressing mode to Page Mode
-
+  SeeedOled.setHorizontalMode();     //Set addressing mode to Page Mode
+  
   // Init Digital Outputs
   // Button
   pinMode(buttonPin, INPUT);
@@ -180,98 +189,57 @@ void setup() {
   pinMode(relayPin, OUTPUT);
 
 
-  // GMX-LR init pass callback function
-  gmxLR_init(&loraRx);
+  // GMX-BG96 Init
+  SeeedOled.setTextXY(0,0);  
+  SeeedOled.putString("BG96 init...");
+  SeeedOled.setTextXY(1,0);  
+  if (gmxBG96_init()==0)
+      {SeeedOled.putString("Init OK");}
+  else{SeeedOled.putString("Init KO");}
 
-  gmxLR_getVersion(version);
-  Serial.println("GMXLR Version:"+version);
-
-  // Set AppEui and AppKey
-  // Uncomment these if you want to change the default keys
+  delay(1000);
+  SeeedOled.setTextXY(1,0);  
+  SeeedOled.putString("Push to get IMEI");
+  waitButton();
   
-  // NewAppEui = "00:00:00:00:00:00:00:00";
-  // NewAppKey = "6d:41:46:39:67:4e:30:56:46:4a:62:4c:67:30:58:33";
+  //gmxLR_getVersion(version);
+  //Serial.println("GMXLR Version:"+version);
 
-  // Region is available in GMX Firmware v2.0
-  // available regions: EU868,US915,IN865,AS923,AU915,CN779,KR920
-  // NewLoraRegion = "AS923";
-  
-  LoRaWANClass = "C";
+  // Show NB-IoT Params on OLED
+  gmxBG96_getIMEI(IMEI);
 
-
-#ifdef MULTIREGION
-  gmxLR_getRegion(Region);
-  if (NewLoraRegion.length() > 0 )
-  {
-    Region.trim();
+  Serial.print("IMEI: ");
+  Serial.print(IMEI);
     
-    Serial.println("**** UPDATING Region ****");
-  
-    if ( !Region.equals(NewLoraRegion) )
-    {
-       Serial.println("Setting Region:"+NewLoraRegion);
-       gmxLR_setRegion(NewLoraRegion);
-       // reboot GMX_LR1
-       gmxLR_Reset();
-    }
-    else
-    {
-       Serial.println("Region is already:"+Region);
-    }
-  }
-#endif
+  //gmxBG96_getIMSI(IMSI);
+  //gmxBG96_devAddress(devAddress);
 
-  gmxLR_getAppEui(AppEui);
-  if (NewAppEui.length() > 0 )
-  {
-        AppEui.trim();
-        
-        Serial.println("**** UPDATING AppEUI ****");
-        if ( !AppEui.equals(NewAppEui) )
-        {
-          Serial.println("Setting AppEui:"+NewAppEui);
-          gmxLR_setAppEui(NewAppEui);
-        }
-        else
-        {
-          Serial.println("AppEui is already:"+AppEui);
-        }
-  }
+  //displayNB_IoT_Params(IMEI, IMEI, IMEI);
 
-  gmxLR_getAppKey(AppKey);
-  if (NewAppKey.length() > 0 )
-  {
-      AppKey.trim();
-      
-      Serial.println("**** UPDATING AppKey ****");
-      if ( !AppKey.equals(NewAppKey) )
-      {
-          Serial.println("Setting AppKey:"+NewAppKey);
-          gmxLR_setAppKey(NewAppKey);
-      }
-      else
-      {
-          Serial.println("AppKey is already:"+AppKey);
-      }
-  }
+  char string[32];
+  IMEI.toCharArray(string, 32);
+  SeeedOled.setTextXY(1,0); 
+  SeeedOled.putString(string);
 
-  // Disable Duty Cycle  ONLY FOR DEBUG!
-  gmxLR_setDutyCycle("0");
+  SeeedOled.setTextXY(2,0); 
+  SeeedOled.putString("Push to attach");
 
-  // Set LoRaWAN Class
-  gmxLR_setClass(LoRaWANClass);
-  
-  // Show Splash Screen on OLED
-  splashScreen();
   waitButton();
 
-  // Show LoRaWAN Params on OLED
-  gmxLR_getDevEui(DevEui);
-  gmxLR_getAppKey(AppKey);
-  gmxLR_getAppEui(AppEui);
-  displayLoraWanParams(DevEui, AppEui, AppKey);
+  // Try to attach
+  Serial.print("Attachment try");
+  SeeedOled.setTextXY(2,0); 
+  SeeedOled.putString("Attachment try");
+  SeeedOled.setTextXY(3,0); 
+
+  // Calling IoT Attachment
+
+  gmxBG96_IoT_Attach("ltebox", BG96_BAND_B28);
+
+  waitButton();
   waitButton();
 
+  /*
   SeeedOled.clearDisplay();
   SeeedOled.setTextXY(0, 0);
   SeeedOled.putString("Joining...");
@@ -316,11 +284,12 @@ void setup() {
     delay(5000);
 
   };
-
+  
   SeeedOled.setTextXY(2, 0);
   SeeedOled.putString("Joined!");
+  */
 
-  writeNFC();
+  //writeNFC();
   delay(2000);
   SeeedOled.clearDisplay();
 
@@ -343,8 +312,9 @@ void loop() {
   String tx_data;
   int port;
 
-  delta_lora_tx = millis() - timer_millis_lora_tx;
+  //delta_lora_tx = millis() - timer_millis_lora_tx;
 
+  /*
   // Transmit Period
   if (( delta_lora_tx > timer_period_to_tx) || (timer_millis_lora_tx == 0 )) {
 
@@ -437,6 +407,7 @@ void loop() {
     displayLoraRX(false);
   }
 
+  */
   // activate actuators and display information
   digitalWrite(relayPin, relay_status);
   displayTemp(current_temperature, thermostat_temperature, manual_mode, relay_status);

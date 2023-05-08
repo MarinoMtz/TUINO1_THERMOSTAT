@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "cstdio": "cpp",
+        "*.tcc": "cpp",
+        "cstddef": "cpp",
+        "cmath": "cpp",
+        "functional": "cpp"
+    }
+}
